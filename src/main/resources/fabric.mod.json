@@ -1,0 +1,21 @@
+
+{
+  "schemaVersion": 1,
+  "id": "trapkaclient",
+  "version": "${version}",
+  "name": "TrapkaClient",
+  "description": "Automatic player trapping client mod.",
+  "authors": ["Trapka"],
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "ru.trapka.client.TrapkaClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
