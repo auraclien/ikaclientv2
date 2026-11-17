@@ -9,11 +9,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -32,11 +32,8 @@ public class TrapkaAutomation {
     private static AbstractClientPlayer target;
     private static BlockPos center;
 
-    private static final List<BlockPos> digPositions =
-            new ArrayList<>();
-
-    private static final List<BlockPos> roofPositions =
-            new ArrayList<>();
+    private static final List<BlockPos> digPositions = new ArrayList<>();
+    private static final List<BlockPos> roofPositions = new ArrayList<>();
 
     private static int playerStartY;
     private static int targetStartY;
@@ -53,10 +50,7 @@ public class TrapkaAutomation {
     private static boolean breaking;
 
     private static final int DEPTH = 3;
-    private static final int WIDTH = 3;
     private static final int REQUIRED_BLOCKS = 9;
-
-    // Запуск ловушки по клавише V
 
     public static void tryStart(Minecraft client) {
 
@@ -73,17 +67,13 @@ public class TrapkaAutomation {
         AbstractClientPlayer closest = null;
         double closestDistance = 4.0;
 
-        // Поиск игрока в радиусе 2 блоков
-
-        for (AbstractClientPlayer other :
-                client.level.players()) {
+        for (AbstractClientPlayer other : client.level.players()) {
 
             if (other == player || !other.isAlive()) {
                 continue;
             }
 
-            double distance =
-                    player.distanceToSqr(other);
+            double distance = player.distanceToSqr(other);
 
             if (distance <= closestDistance) {
                 closestDistance = distance;
@@ -92,9 +82,6 @@ public class TrapkaAutomation {
         }
 
         if (closest == null) return;
-
-        // Не запускаем ловушку, если игроки сильно
-        // отличаются по высоте
 
         if (Math.abs(
                 player.blockPosition().getY()
@@ -106,18 +93,14 @@ public class TrapkaAutomation {
         int foundPickaxe = -1;
         int blockCount = 0;
 
-        // Проверяем хотбар
-
         for (int i = 0; i < 9; i++) {
 
-            ItemStack stack =
-                    player.getInventory().getItem(i);
+            ItemStack stack = player.getInventory().getItem(i);
 
             if (stack.isEmpty()) continue;
 
             if (foundPickaxe == -1 &&
-                    stack.getItem() instanceof PickaxeItem) {
-
+                    stack.is(ItemTags.PICKAXES)) {
                 foundPickaxe = i;
             }
 
@@ -133,16 +116,11 @@ public class TrapkaAutomation {
 
         target = closest;
 
-        originalSlot =
-                player.getInventory().getSelectedSlot();
-
+        originalSlot = player.getInventory().getSelectedSlot();
         pickaxeSlot = foundPickaxe;
 
-        playerStartY =
-                player.blockPosition().getY();
-
-        targetStartY =
-                target.blockPosition().getY();
+        playerStartY = player.blockPosition().getY();
+        targetStartY = target.blockPosition().getY();
 
         center = BlockPos.containing(
                 (player.getX() + target.getX()) / 2.0,
@@ -153,14 +131,9 @@ public class TrapkaAutomation {
         digPositions.clear();
         roofPositions.clear();
 
-        // Создаём яму 3x3 глубиной 3 блока
-
         for (int layer = 0; layer < DEPTH; layer++) {
-
             for (int x = -1; x <= 1; x++) {
-
                 for (int z = -1; z <= 1; z++) {
-
                     digPositions.add(
                             new BlockPos(
                                     center.getX() + x,
@@ -172,17 +145,9 @@ public class TrapkaAutomation {
             }
         }
 
-        // Сначала края крыши, затем центр
-
         for (int x = -1; x <= 1; x++) {
-
             for (int z = -1; z <= 1; z++) {
-
-                if (Math.max(
-                        Math.abs(x),
-                        Math.abs(z)
-                ) == 1) {
-
+                if (Math.max(Math.abs(x), Math.abs(z)) == 1) {
                     roofPositions.add(
                             new BlockPos(
                                     center.getX() + x,
@@ -214,8 +179,6 @@ public class TrapkaAutomation {
         phase = Phase.DIGGING;
     }
 
-    // Обработка каждого игрового тика
-
     public static void tick(Minecraft client) {
 
         if (phase == Phase.IDLE) return;
@@ -223,13 +186,11 @@ public class TrapkaAutomation {
         if (client.player == null ||
                 client.level == null ||
                 client.gameMode == null) {
-
             finish(client);
             return;
         }
 
         switch (phase) {
-
             case DIGGING:
                 tickDigging(client);
                 break;
@@ -247,19 +208,13 @@ public class TrapkaAutomation {
         }
     }
 
-    // Копаем все 27 блоков
-
     private static void tickDigging(Minecraft client) {
 
         while (digIndex < digPositions.size()) {
 
             BlockPos pos = digPositions.get(digIndex);
 
-            BlockState state =
-                    client.level.getBlockState(pos);
-
-            // Если блок уже сломан зачарованием 3x3
-            // или другим действием, пропускаем его
+            BlockState state = client.level.getBlockState(pos);
 
             if (state.isAir()) {
 
@@ -274,14 +229,7 @@ public class TrapkaAutomation {
                 continue;
             }
 
-            // Не пытаемся бесконечно ломать
-            // неразрушаемые блоки
-
-            if (state.getDestroySpeed(
-                    client.level,
-                    pos
-            ) < 0.0F) {
-
+            if (state.getDestroySpeed(client.level, pos) < 0.0F) {
                 finish(client);
                 return;
             }
@@ -291,30 +239,20 @@ public class TrapkaAutomation {
                 return;
             }
 
-            client.player.getInventory()
-                    .setSelectedSlot(pickaxeSlot);
+            client.player.getInventory().setSelectedSlot(pickaxeSlot);
 
             if (!breaking) {
 
-                client.gameMode.startDestroyBlock(
-                        pos,
-                        Direction.UP
-                );
-
+                client.gameMode.startDestroyBlock(pos, Direction.UP);
                 breaking = true;
 
             } else {
 
-                client.gameMode.continueDestroyBlock(
-                        pos,
-                        Direction.UP
-                );
+                client.gameMode.continueDestroyBlock(pos, Direction.UP);
             }
 
             return;
         }
-
-        // Все слои выкопаны
 
         if (breaking) {
             client.gameMode.stopDestroyBlock();
@@ -325,8 +263,6 @@ public class TrapkaAutomation {
         waitTicks = 0;
     }
 
-    // Ждём, пока оба игрока упадут на 3 блока
-
     private static void tickWaiting(Minecraft client) {
 
         if (target == null || !target.isAlive()) {
@@ -335,12 +271,10 @@ public class TrapkaAutomation {
         }
 
         boolean playerFell =
-                client.player.blockPosition().getY()
-                        <= playerStartY - 3;
+                client.player.blockPosition().getY() <= playerStartY - 3;
 
         boolean targetFell =
-                target.blockPosition().getY()
-                        <= targetStartY - 3;
+                target.blockPosition().getY() <= targetStartY - 3;
 
         boolean playerInside =
                 isInsideHole(client.player.blockPosition());
@@ -348,17 +282,13 @@ public class TrapkaAutomation {
         boolean targetInside =
                 isInsideHole(target.blockPosition());
 
-        if (playerFell && targetFell &&
-                playerInside && targetInside) {
+        if (playerFell && targetFell && playerInside && targetInside) {
 
             phase = Phase.ROOFING;
             roofIndex = 0;
             placeTicks = 0;
             return;
         }
-
-        // Если оба не оказались внутри,
-        // не закрываем яму только над одним игроком
 
         if (waitTicks++ > 200) {
             finish(client);
@@ -371,8 +301,6 @@ public class TrapkaAutomation {
                 && Math.abs(pos.getZ() - center.getZ()) <= 1;
     }
 
-    // Проверка подходящих строительных блоков
-
     private static boolean isBuildingBlock(ItemStack stack) {
 
         if (!(stack.getItem() instanceof BlockItem blockItem)) {
@@ -384,16 +312,13 @@ public class TrapkaAutomation {
                 .canOcclude();
     }
 
-    // Выбираем случайный блок из хотбара
-
     private static int randomBlockSlot(Minecraft client) {
 
         List<Integer> slots = new ArrayList<>();
 
         for (int i = 0; i < 9; i++) {
 
-            ItemStack stack =
-                    client.player.getInventory().getItem(i);
+            ItemStack stack = client.player.getInventory().getItem(i);
 
             if (isBuildingBlock(stack)) {
                 slots.add(i);
@@ -405,13 +330,9 @@ public class TrapkaAutomation {
         }
 
         return slots.get(
-                ThreadLocalRandom.current().nextInt(
-                        slots.size()
-                )
+                ThreadLocalRandom.current().nextInt(slots.size())
         );
     }
-
-    // Находим соседний блок для установки крыши
 
     private static BlockHitResult findPlacementHit(
             Minecraft client,
@@ -420,11 +341,9 @@ public class TrapkaAutomation {
 
         for (Direction direction : Direction.values()) {
 
-            BlockPos supportPos =
-                    placePos.relative(direction);
+            BlockPos supportPos = placePos.relative(direction);
 
-            BlockState support =
-                    client.level.getBlockState(supportPos);
+            BlockState support = client.level.getBlockState(supportPos);
 
             if (support.isAir() || !support.canOcclude()) {
                 continue;
@@ -433,14 +352,9 @@ public class TrapkaAutomation {
             Direction face = direction.getOpposite();
 
             Vec3 hit = new Vec3(
-                    supportPos.getX() + 0.5
-                            + face.getStepX() * 0.5,
-
-                    supportPos.getY() + 0.5
-                            + face.getStepY() * 0.5,
-
-                    supportPos.getZ() + 0.5
-                            + face.getStepZ() * 0.5
+                    supportPos.getX() + 0.5 + face.getStepX() * 0.5,
+                    supportPos.getY() + 0.5 + face.getStepY() * 0.5,
+                    supportPos.getZ() + 0.5 + face.getStepZ() * 0.5
             );
 
             return new BlockHitResult(
@@ -454,8 +368,6 @@ public class TrapkaAutomation {
         return null;
     }
 
-    // Закрываем яму блоками из хотбара
-
     private static void tickRoofing(Minecraft client) {
 
         if (roofIndex >= roofPositions.size()) {
@@ -463,13 +375,9 @@ public class TrapkaAutomation {
             return;
         }
 
-        BlockPos placePos =
-                roofPositions.get(roofIndex);
-
-        // Уже заполненное место пропускаем
+        BlockPos placePos = roofPositions.get(roofIndex);
 
         if (!client.level.getBlockState(placePos).isAir()) {
-
             roofIndex++;
             placeTicks = 0;
             return;
@@ -479,8 +387,6 @@ public class TrapkaAutomation {
             finish(client);
             return;
         }
-
-        // Не пытаемся ставить блок каждый тик
 
         if (placeTicks % 5 != 0) {
             return;
@@ -495,29 +401,22 @@ public class TrapkaAutomation {
 
         client.player.getInventory().setSelectedSlot(slot);
 
-        BlockHitResult hit =
-                findPlacementHit(client, placePos);
+        BlockHitResult hit = findPlacementHit(client, placePos);
 
         if (hit == null) {
             return;
         }
 
-        InteractionResult result =
-                client.gameMode.useItemOn(
-                        client.player,
-                        InteractionHand.MAIN_HAND,
-                        hit
-                );
-
-        // Если установка принята, проверим блок
-        // на следующем тике
+        InteractionResult result = client.gameMode.useItemOn(
+                client.player,
+                InteractionHand.MAIN_HAND,
+                hit
+        );
 
         if (result.consumesAction()) {
             placeTicks = 0;
         }
     }
-
-    // Завершение работы
 
     private static void finish(Minecraft client) {
 
@@ -526,9 +425,7 @@ public class TrapkaAutomation {
         }
 
         if (client.player != null && originalSlot >= 0) {
-
-            client.player.getInventory()
-                    .setSelectedSlot(originalSlot);
+            client.player.getInventory().setSelectedSlot(originalSlot);
         }
 
         phase = Phase.IDLE;
